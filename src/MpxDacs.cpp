@@ -724,7 +724,7 @@ void MpxDacs::applyChipDacs(int chipid) {
 	} else {
 		int port = (*m_priamPorts)[chipid - 1];
 		getFsrString(chipid, sfsr);
-		std::cout << "Loading Chip FSR #" << chipid << " ..." << std::cout;
+		std::cout << "Loading Chip FSR #" << chipid << " ..." << std::endl;
 		m_pacq->setChipFsr(port, sfsr);
 		// need to wait for FSR transfer at least for the last
 		// chip otherwise an immediate exposure could make image

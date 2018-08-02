@@ -275,7 +275,7 @@ void PriamAcq::setChipFsr(short port,const string &fsr)
     fsrString << std::hex;
     fsrString << fsr;
 
-    DEB_PARAM() << DEB_VAR2(port,fsrString);
+    DEB_PARAM() << DEB_VAR2(port,fsrString.str());
 
     string sdummy, sid;
 
