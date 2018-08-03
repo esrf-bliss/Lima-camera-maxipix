@@ -12,10 +12,10 @@ stages:
   tags:
     - conda
 
-build-win:
+build-linux:
   <<: *build-conda
   tags:
-    - win
+    - linux
 
 build-noarch:
   <<: *build-conda
@@ -26,7 +26,7 @@ deploy_devel:
     name: devel/$CI_COMMIT_REF_NAME
     url: http://bcu-ci.esrf.fr/devel
   dependencies:
-    - build-win
+    - build-linux
     - build-noarch
   script:
     - cp -Rf dist/* /conda-devel/
@@ -46,7 +46,7 @@ deploy_stable:
     name: production
     url: http://bcu-ci.esrf.fr/stable
   dependencies:
-    - build-win
+    - build-linux
     - build-noarch
   script:
     - cp -Rf dist/* /conda/
