@@ -118,11 +118,9 @@ bool Camera::checkTrigMode(TrigMode trig_mode, bool accumulation_mode) {
 	case IntTrig:
 	case IntTrigMult:
 	case ExtTrigSingle:
-		valid_mode = true;
-		break;
 	case ExtTrigMult:
 	case ExtGate:
-		valid_mode = accumulation_mode ? false : true;
+		valid_mode = true;
 		break;
 	default:
 		valid_mode = false;
