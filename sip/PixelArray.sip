@@ -22,10 +22,6 @@
 namespace Maxipix {
 
 %TypeHeaderCode
-#define NO_IMPORT_ARRAY
-#define PY_ARRAY_UNIQUE_SYMBOL _LimaNumPy
-#include "numpy/arrayobject.h"
-
 #include "MpxVersion.h"
 #include "PixelArray.h"
 #include <string>
@@ -42,7 +38,8 @@ class PixelConfigArray {
 
     void convert(std::string& /Out/);
 
-    void* maskArray;
+    void* maskArray
+    {
 %GetCode
     if (!sipCpp->maskArray) Py_RETURN_NONE;
     npy_intp dims[2]= { 256, 256 };
@@ -62,8 +59,10 @@ class PixelConfigArray {
     }
     Py_DECREF(tmpObject);
 %End
+    };
 
-    void* testArray;
+    void* testArray
+    {
 %GetCode
     if (!sipCpp->testArray) Py_RETURN_NONE;
     npy_intp dims[2]= { 256, 256 };
@@ -83,8 +82,10 @@ class PixelConfigArray {
     }
     Py_DECREF(tmpObject);
 %End
+    };
 
-    void* lowArray;
+    void* lowArray
+    {
 %GetCode
     if (!sipCpp->lowArray) Py_RETURN_NONE;
     npy_intp dims[2]= { 256, 256 };
@@ -104,8 +105,10 @@ class PixelConfigArray {
     }
     Py_DECREF(tmpObject);
 %End
+    };
 
-    void* highArray;
+    void* highArray
+    {
 %GetCode
     if (!sipCpp->highArray) Py_RETURN_NONE;
     npy_intp dims[2]= { 256, 256 };
@@ -125,7 +128,7 @@ class PixelConfigArray {
     }
     Py_DECREF(tmpObject);
 %End
-
+    };
 };
 
 };
