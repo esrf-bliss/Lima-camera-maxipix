@@ -89,7 +89,9 @@ if (CAMERA_ENABLE_PYTHON)
   find_package(NumPy REQUIRED)
 endif()
 
-find_package(Espia REQUIRED)
+if (CAMERA_MASTER_PROJECT)
+  find_package(Espia REQUIRED)
+endif()
 
 file(GLOB_RECURSE MAXIPIX_INCS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
 
@@ -139,6 +141,12 @@ endif()
 if(CAMERA_ENABLE_PYTHON)
   include(LimaTools)
   set(IMPORTS "limaespia.sip")
+  if(NOT CAMERA_MASTER_PROJECT)
+    set(SIP_INCLUDE_DIRS
+      "${CMAKE_CURRENT_BINARY_DIR}/../common/espia/sip"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../common/espia/sip"
+    )
+  endif()
   limatools_run_sip_for_camera(maxipix)
 endif()
 
