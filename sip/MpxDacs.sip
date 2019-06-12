@@ -154,8 +154,8 @@ public:
 	void getEnergy(double& energy /Out/);
 
 	void setOneDac(int chipid, std::string name, int value);
-	void setDacs(int chipid, std::map<std::string, int>& dacs /Out/);
-	void getOneDac(int chipid, std::string name, int& value);
+	void setDacs(int chipid, std::map<std::string, int>& dacs);
+	void getOneDac(int chipid, std::string name, int& value /Out/);
 	void getDacs(int chipid, std::map<std::string, int>& dacs /Out/);
 	std::vector<std::string> getListKeys();
 };
