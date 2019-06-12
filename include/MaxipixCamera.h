@@ -107,7 +107,8 @@ public:
 	void getEnergy(double& energy){m_mpxDacs->getEnergy(energy); }
 
 	PriamAcq* priamAcq() {return &m_priamAcq; }
-
+        MpxDacs* dacs() {return m_mpxDacs;}
+	
 	MaxipixReconstruction* getReconstructionTask(){return m_reconstructionTask;};
 
 

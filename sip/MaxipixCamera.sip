@@ -84,6 +84,7 @@ public:
 	void getEnergy(double& energy /Out/);
 
 	Maxipix::PriamAcq* priamAcq();
+	Maxipix::MpxDacs*  dacs();
 };
 
 };
