@@ -739,22 +739,22 @@ void MpxDacs::getFsrString(int chipid, std::string& fsrString) {
 	m_chipDacs[p.first]->getFsrString(fsrString);
 }
 
-void MpxDacs::setThlNoise(std::map<int, int>& values) {
+void MpxDacs::setThlNoise(ThlNoiseMapType& values) {
 	DEB_MEMBER_FUNCT();
 	m_thlNoise = values;
 }
 
-void MpxDacs::getThlNoise(std::map<int, int>& noise) {
+void MpxDacs::getThlNoise(ThlNoiseMapType& noise) {
 	DEB_MEMBER_FUNCT();
 	noise = m_thlNoise;
 }
 
-void MpxDacs::setThlXray(std::map<int, int>& values) {
+void MpxDacs::setThlXray(ThlNoiseMapType& values) {
 	DEB_MEMBER_FUNCT();
 	m_thlXray = values;
 }
 
-void MpxDacs::getThlXray(std::map<int, int>& threshold) {
+void MpxDacs::getThlXray(ThlNoiseMapType& threshold) {
 	DEB_MEMBER_FUNCT();
 	threshold = m_thlXray;
 }
@@ -785,6 +785,11 @@ void MpxDacs::getEnergy(double& energy) {
 	energy = m_lastEnergy;
 }
 
+std::vector<std::string>  MpxDacs::getListKeys() {
+        DEB_MEMBER_FUNCT();
+	return m_chipDacs[0]->getListKeys();
+}
+
 void MpxDacs::setOneDac(int chipid, std::string name, int value) {
 	DEB_MEMBER_FUNCT();
 	std::pair<int, int> p = getChipIdx(chipid);
@@ -793,7 +798,7 @@ void MpxDacs::setOneDac(int chipid, std::string name, int value) {
 	}
 }
 
-void MpxDacs::setDacs(int chipid, std::map<std::string, int>& dacs) {
+void MpxDacs::setDacs(int chipid, DacCodeMapType& dacs) {
 	DEB_MEMBER_FUNCT();
 	std::pair<int, int> p = getChipIdx(chipid);
 	for (int idx = p.first; idx < p.second; idx++) {
@@ -820,7 +825,7 @@ void MpxDacs::getOneDac(int chipid, std::string name, int& value) {
 	value = dacs[0];
 }
 
-void MpxDacs::getDacs(int chipid, std::map<std::string, int>& res) {
+void MpxDacs::getDacs(int chipid, DacCodeMapType& res) {
 	DEB_MEMBER_FUNCT();
 	std::pair<int, int> p = getChipIdx(chipid);
 	std::vector<std::map<std::string, int> > dacs;

@@ -28,6 +28,7 @@
 #include "lima/Constants.h"
 #include "lima/HwInterface.h"
 #include "MpxVersion.h"
+#include "MpxVersion.h"
 #include "PriamAcq.h"
 
 namespace lima {
@@ -85,6 +86,9 @@ private:
 	void setValue(std::string& name, int value);
 };
 
+ typedef  std::map<std::string, int> DacCodeMapType;
+ typedef  std::map<int, int> ThlNoiseMapType;
+ 
 class MpxDacs {
 DEB_CLASS_NAMESPC(DebModCamera, "Camera", "MpxDacs");
 public:
@@ -96,32 +100,30 @@ public:
 	void applyChipDacs(int chipid);
 	void getFsrString(int chipid, std::string& fsrString);
 
-	void setThlNoise(std::map<int,int>& noise);
-	void getThlNoise(std::map<int,int>& noise);
-	void setThlXray(std::map<int,int>& threshold);
-	void getThlXray(std::map<int,int>& threshold);
+	void setThlNoise(ThlNoiseMapType& noise);
+	void getThlNoise(ThlNoiseMapType& noise);
+	void setThlXray(ThlNoiseMapType& threshold);
+	void getThlXray(ThlNoiseMapType& threshold);
 	void setEnergyCalibration(double energy);
 	void getEnergyCalibration(double& energy);
 	void setEnergy(double energy);
 	void getEnergy(double& energy);
 
 	void setOneDac(int chipid, std::string name, int value);
-	void setDacs(int chipid, std::map<std::string,int>& dacs);
+	void setDacs(int chipid, DacCodeMapType& dacs);
 	void getOneDac(int chipid, std::string name, int& value);
-	void getDacs(int chipid, std::map<std::string,int>& dacs);
-
+	void getDacs(int chipid, DacCodeMapType& dacs);
+	std::vector<std::string> getListKeys();
+	
 private:
-	MpxDacs(const MpxDacs&);
-	MpxDacs& operator=(const MpxDacs&);
-
 	Version& m_version;
 	int m_nchip;
 	PriamAcq* m_pacq;
 	std::vector<int>* m_priamPorts;
 	double m_lastEnergy;
 	double m_energyCalib;
-	std::map<int,int> m_thlNoise;
-	std::map<int,int> m_thlXray;
+	ThlNoiseMapType m_thlNoise;
+	ThlNoiseMapType m_thlXray;
 	std::vector<MpxChipDacs*> m_chipDacs;
 
 	std::pair<int,int> getChipIdx(int chipid);

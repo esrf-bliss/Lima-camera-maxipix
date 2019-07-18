@@ -107,7 +107,7 @@ add_library(maxipix SHARED
   src/MpxDetConfig.cpp
   src/MpxCommon.cpp
   src/MpxChipConfig.cpp
-  src/MpxDacs
+  src/MpxDacs.cpp
   tools/src/INIReader.cpp
   tools/ini.c
   ${MAXIPIX_INCS}
