@@ -5,3 +5,5 @@
 core.*
 test/src/test
 test/src/test2
+build/
+tango/build/
