@@ -764,7 +764,10 @@ void PriamAcq::startAcq()
     txtime= m_fo_fast ? 560. : 700.;
     txtime /= m_time_us;
     minit = m_min_it / m_time_us;
-    if (m_nb_frame != 1 && (m_int_time-minit+m_expo_time)<(txtime*nbchip))
+
+    // do not check timing in external trigger
+    if (m_trig_mode == IntTrig || m_trig_mode == IntTrigMult)
+      if (m_nb_frame != 1 && (m_int_time+m_expo_time)<(txtime*nbchip))
 	THROW_HW_ERROR(Error) << "Timing too fast (interval+expo < transfer): "
 			      << DEB_VAR5(m_int_time, minit, m_expo_time, 
 					  txtime, nbchip);
