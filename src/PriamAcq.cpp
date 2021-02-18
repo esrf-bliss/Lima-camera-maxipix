@@ -632,8 +632,13 @@ void PriamAcq::setNbFrames(int nb)
 	    << "Infinite sequence only possible for firmware rev.>3 ("
 	    << DEB_VAR1(m_firmware) << ")";
 
-    if (nb > 0xffff)
-  	THROW_HW_ERROR(InvalidValue) << "Too many frames asked";
+    // If firmware is >==3 use infinite mode to run over 65536 frames
+    // Espia callback will stop the priam acquisition when requested frames
+    // have been received
+    if (nb > 0xffff && m_firmware>=3)
+      nb = 0;
+    else if (nb > 0xffff) 
+  	THROW_HW_ERROR(InvalidValue) << "Cannot set more than 65536 frames with firmware rev.<3, please update the firmware";
 
     in1.assign(1, (char)(nb&0xff));
     in2.assign(1, (char)((nb>>8)&0xff));
