@@ -174,6 +174,9 @@ public:
     void resetAllFifo();
     void resetChip(short port);
     void resetAllChip();
+
+  private:
+    PriamAcq(const Maxipix::PriamAcq&);
   };
 };
 

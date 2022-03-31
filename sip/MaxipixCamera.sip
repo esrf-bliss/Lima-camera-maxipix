@@ -85,6 +85,9 @@ public:
 
 	Maxipix::PriamAcq* priamAcq();
 	Maxipix::MpxDacs*  dacs();
+
+private:
+	Camera(const Maxipix::Camera&);
 };
 
 };

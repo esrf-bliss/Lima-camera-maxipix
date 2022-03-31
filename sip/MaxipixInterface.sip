@@ -56,6 +56,8 @@ class Interface : HwInterface
 
 	Maxipix::PriamAcq* priamAcq();
 
+ private:
+	Interface(const Maxipix::Interface&);
 };
 
 }; // namespace Maxipix

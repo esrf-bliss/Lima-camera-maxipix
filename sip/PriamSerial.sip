@@ -110,5 +110,7 @@ using namespace lima;
     void writeLut(Maxipix::PriamSerial::PriamLut lut,const std::string& buffer);
     void readLut(Maxipix::PriamSerial::PriamLut lut, std::string& buffer /Out/, long size) const;
 
+  private:
+	PriamSerial(const Maxipix::PriamSerial&);
   };
 };
