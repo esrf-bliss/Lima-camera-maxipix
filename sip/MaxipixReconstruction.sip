@@ -152,8 +152,10 @@ using namespace Maxipix;
     Size getImageSize() const;
     void setChipsPosition(const MaxipixReconstruction::PositionList&);
     virtual Data process(Data &aData);
-  };
 
+  private:
+    MaxipixReconstruction(const Maxipix::MaxipixReconstruction&);
+  };
 }; // namespace Maxipix
 
 
