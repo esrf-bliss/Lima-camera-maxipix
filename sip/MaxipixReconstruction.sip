@@ -153,8 +153,6 @@ using namespace Maxipix;
     void setChipsPosition(const MaxipixReconstruction::PositionList&);
     virtual Data process(Data &aData);
 
-  private:
-    MaxipixReconstruction(const Maxipix::MaxipixReconstruction&);
   };
 }; // namespace Maxipix
 
