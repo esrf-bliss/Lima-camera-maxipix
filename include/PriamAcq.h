@@ -197,7 +197,7 @@ class PriamAcq {
     inline void _checkPortNr(short port) const;
 
 
-    PriamSerial 	m_priam_serial;
+    PriamSerial& 	m_priam_serial;
     short			m_setup;
     Version	m_version;
     std::vector<long> 		m_chip_id;
