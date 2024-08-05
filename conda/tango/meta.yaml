@@ -22,7 +22,8 @@ requirements:
     - ninja
     - lima-core
   run:
-    - lima-tango-server
+    - python
+    - lima-tango-server 1.10*
     - lima-camera-maxipix
 
 about:
