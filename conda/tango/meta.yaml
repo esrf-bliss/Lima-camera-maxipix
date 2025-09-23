@@ -23,7 +23,7 @@ requirements:
     - lima-core
   run:
     - python
-    - lima-tango-server 1.10*
+    - lima-tango-server
     - lima-camera-maxipix
 
 about:

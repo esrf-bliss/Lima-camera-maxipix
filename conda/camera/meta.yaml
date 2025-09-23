@@ -22,7 +22,7 @@ requirements:
     - lima-core 1.10*
     - lima-common-espia
   build:
-    - cmake 3
+    - cmake
     - ninja
     - {{ compiler('cxx') }}
   run:
