@@ -23,8 +23,8 @@ requirements:
     - lima-core
   run:
     - python
-    - lima-tango-server 1.10*
-    - lima-camera-maxipix
+    - lima-tango-server
+    - lima-camera-maxipix {{ version }}
 
 about:
   home: https://github.com/esrf-bliss/Lima
