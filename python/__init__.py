@@ -1,7 +1,7 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2011
+# Copyright (C) : 2009-2026
 # European Synchrotron Radiation Facility
 # BP 220, Grenoble 38043
 # FRANCE
@@ -19,8 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 ############################################################################
-from Lima import Espia
+from lima import espia
 
-from limamaxipix import Maxipix as _M
+from lima.limamaxipix import Maxipix as _M
 globals().update(_M.__dict__)
 
