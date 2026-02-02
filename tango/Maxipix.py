@@ -1,7 +1,7 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2015
+# Copyright (C) : 2009-2026
 # European Synchrotron Radiation Facility
 # BP 220, Grenoble 38043
 # FRANCE
@@ -42,38 +42,38 @@
 import PyTango
 import sys, types, os, time
 
-from Lima import Core
-from Lima import Maxipix as MaxipixModule
+from lima import core
+from lima import maxipix as MaxipixModule
 # import some useful helpers to create direct mapping between tango attributes
 # and Lima APIs.
 from Lima.Server import AttrHelper
 
-class Maxipix(PyTango.Device_4Impl):
+class Maxipix(PyTango.LatestDeviceImpl):
 
-    Core.DEB_CLASS(Core.DebModApplication, 'Maxipix')
+    core.DEB_CLASS(core.DebModule.DebModApplication, 'Maxipix')
     
 
 #------------------------------------------------------------------
 #    Device constructor
 #------------------------------------------------------------------
     def __init__(self,*args) :
-        PyTango.Device_4Impl.__init__(self,*args)
+        PyTango.LatestDeviceImpl.__init__(self,*args)
 
-        self.__SignalLevel = {'LOW_FALL': MaxipixModule.PriamAcq.LOW_FALL,\
-                              'HIGH_RISE': MaxipixModule.PriamAcq.HIGH_RISE}
+        self.__SignalLevel = {'LOW_FALL': MaxipixModule.PriamAcq.SignalLevel.LOW_FALL,\
+                              'HIGH_RISE': MaxipixModule.PriamAcq.SignalLevel.HIGH_RISE}
         self.__ReadyLevel = self.__SignalLevel
         self.__GateLevel = self.__SignalLevel
         self.__TriggerLevel = self.__SignalLevel
         self.__ShutterLevel = self.__SignalLevel
         
-        self.__ReadyMode =   {'EXPOSURE': MaxipixModule.PriamAcq.EXPOSURE,\
-                              'EXPOSURE_READOUT': MaxipixModule.PriamAcq.EXPOSURE_READOUT}
-        self.__GateMode =    {'INACTIVE': MaxipixModule.PriamAcq.INACTIVE,\
-                              'ACTIVE': MaxipixModule.PriamAcq.ACTIVE}
-        self.__FillMode =    {'RAW': MaxipixModule.MaxipixReconstruction.RAW,
-                              'ZERO': MaxipixModule.MaxipixReconstruction.ZERO,
-                              'DISPATCH': MaxipixModule.MaxipixReconstruction.DISPATCH,
-                              'MEAN': MaxipixModule.MaxipixReconstruction.MEAN
+        self.__ReadyMode =   {'EXPOSURE': MaxipixModule.PriamAcq.ReadyMode.EXPOSURE,\
+                              'EXPOSURE_READOUT': MaxipixModule.PriamAcq.ReadyMode.EXPOSURE_READOUT}
+        self.__GateMode =    {'INACTIVE': MaxipixModule.PriamAcq.GateMode.INACTIVE,\
+                              'ACTIVE': MaxipixModule.PriamAcq.GateMode.ACTIVE}
+        self.__FillMode =    {'RAW': MaxipixModule.MaxipixReconstruction.Type.RAW,
+                              'ZERO': MaxipixModule.MaxipixReconstruction.Type.ZERO,
+                              'DISPATCH': MaxipixModule.MaxipixReconstruction.Type.DISPATCH,
+                              'MEAN': MaxipixModule.MaxipixReconstruction.Type.MEAN
                               }
         
         self.__Attribute2FunctionBase = {'signal_level': 'SignalLevel',
@@ -98,7 +98,7 @@ class Maxipix(PyTango.Device_4Impl):
 #------------------------------------------------------------------
 #    Device initialization
 #------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
+    @core.DEB_MEMBER_FUNCT
     def init_device(self):
         self.set_state(PyTango.DevState.ON)
         # Load the properties
@@ -116,7 +116,7 @@ class Maxipix(PyTango.Device_4Impl):
 #
 #==================================================================
 
-    @Core.DEB_MEMBER_FUNCT
+    @core.DEB_MEMBER_FUNCT
     def applyNewPropery(self, prop_name, extra=None):
         if extra is not None: name = self.__OtherAttribute2FunctionBase[prop_name]
         else: name = self.__Attribute2FunctionBase[prop_name]
@@ -227,7 +227,7 @@ class Maxipix(PyTango.Device_4Impl):
 #    Description: return a list of authorized values if any
 #    argout: DevVarStringArray   
 #------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
+    @core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
         if attr_name.count('config_name'):
             return self.__getConfigNameList()
@@ -417,7 +417,7 @@ def get_control(espia_dev_nb = '0',config_path='', config_name='', reconstructio
         _MaxipixCamera = MaxipixModule.Camera(int(espia_dev_nb), config_path, config_name, active)
         _MaxipixInterface = MaxipixModule.Interface(_MaxipixCamera)
         
-    return Core.CtControl(_MaxipixInterface)
+    return core.CtControl(_MaxipixInterface)
 
     
 def get_tango_specific_class_n_device():
