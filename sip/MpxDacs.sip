@@ -1,7 +1,7 @@
 //###########################################################################
 // This file is part of LImA, a Library for Image Acquisition
 //
-// Copyright (C) : 2009-2019
+// Copyright (C) : 2009-2026
 // European Synchrotron Radiation Facility
 // BP 220, Grenoble 38043
 // FRANCE
@@ -31,7 +31,7 @@
 
 %ConvertToTypeCode
 PyObject *key, *value;
-SIP_SSIZE_T pos;
+Py_ssize_t pos;
 
 if(sipIsErr == NULL)
 {
@@ -39,7 +39,7 @@ if(sipIsErr == NULL)
 
   pos = 0;
   while(aReturnFlag && PyDict_Next(sipPy, &pos, &key, &value))
-     aReturnFlag = PyInt_Check(value) && sipCheckConvertFromPyStr(key);
+     aReturnFlag = PyLong_Check(value) && sipCheckConvertFromPyStr(key);
 
   return aReturnFlag;
 }
@@ -48,7 +48,7 @@ if(sipIsErr == NULL)
 pos = 0;
 while(PyDict_Next(sipPy, &pos, &key, &value))
 {
-  int anIndex = PyInt_AS_LONG(value);
+  int anIndex = PyLong_AsInt(value);
   std::pair<std::string, int> item(sipConvertFromPyStr(key), anIndex);
   (*sipCppPtr)->insert(item);
 }
@@ -62,7 +62,7 @@ std::map<std::string, int>::iterator mIter, mEnd = sipCpp->end();
 for(mIter = sipCpp->begin(); mIter != mEnd; ++mIter)
    {
     PyObject *aKeyPt = sipConvertToPyStr(mIter->first);
-    PyObject *aValuePt = PyInt_FromLong(mIter->second);
+    PyObject *aValuePt = PyLong_FromLong(mIter->second);
     PyDict_SetItem(aReturnDictPt,aKeyPt,aValuePt);
     Py_DECREF(aKeyPt);Py_DECREF(aValuePt);
    }
@@ -80,7 +80,7 @@ return aReturnDictPt;
 
 %ConvertToTypeCode
 PyObject *key, *value;
-SIP_SSIZE_T pos;
+Py_ssize_t pos;
 
 if(sipIsErr == NULL)
 {
@@ -88,7 +88,7 @@ if(sipIsErr == NULL)
 
   pos = 0;
   while(aReturnFlag && PyDict_Next(sipPy, &pos, &key, &value))
-     aReturnFlag = PyInt_Check(value) && PyInt_Check(key);
+     aReturnFlag = PyLong_Check(value) && PyLong_Check(key);
 
   return aReturnFlag;
 }
@@ -97,8 +97,8 @@ if(sipIsErr == NULL)
 pos = 0;
 while(PyDict_Next(sipPy, &pos, &key, &value))
 {
-  int aValue = PyInt_AS_LONG(value);
-  int aKey = PyInt_AS_LONG(key);
+  int aValue = PyLong_AsInt(value);
+  int aKey = PyLong_AsInt(key);
   std::pair<int, int> item(aKey, aValue);
   (*sipCppPtr)->insert(item);
 }
@@ -111,8 +111,8 @@ PyObject* aReturnDictPt = PyDict_New();
 std::map<int, int>::iterator mIter, mEnd = sipCpp->end();
 for(mIter = sipCpp->begin(); mIter != mEnd; ++mIter)
    {
-    PyObject *aKeyPt = PyInt_FromLong(mIter->first);
-    PyObject *aValuePt = PyInt_FromLong(mIter->second);
+    PyObject *aKeyPt = PyLong_FromLong(mIter->first);
+    PyObject *aValuePt = PyLong_FromLong(mIter->second);
     PyDict_SetItem(aReturnDictPt,aKeyPt,aValuePt);
     Py_DECREF(aKeyPt);Py_DECREF(aValuePt);
    }
