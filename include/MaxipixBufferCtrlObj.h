@@ -42,6 +42,9 @@ public:
 	BufferCtrlObj(BufferCtrlMgr& buffer_mgr);
 	virtual ~BufferCtrlObj();
 
+	virtual void setAllocParameters(const AllocParameters& alloc_params);
+	virtual void getAllocParameters(      AllocParameters& alloc_params);
+
 	virtual void setFrameDim(const FrameDim& frame_dim);
 	virtual void getFrameDim(FrameDim& frame_dim);
 
