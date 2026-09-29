@@ -23,7 +23,7 @@
 #
 # file :        Maxipix.py
 #
-# description : Python source for the Maxipix and its commands. 
+# description : Python source for the Maxipix and its commands.
 #                The class is derived from Device. It represents the
 #                CORBA servant object which will be accessed from the
 #                network. All commands which can be executed on the
@@ -39,8 +39,11 @@
 #         (c) - Bliss - ESRF
 #=============================================================================
 #
+import os
+
 import PyTango
-import sys, types, os, time
+from tango import AttrWriteType, DevState
+from tango.server import Device, attribute, command, device_property
 
 from lima import core
 from lima import maxipix as MaxipixModule
@@ -48,102 +51,104 @@ from lima import maxipix as MaxipixModule
 # and Lima APIs.
 from lima.server import AttrHelper
 
-class Maxipix(PyTango.LatestDeviceImpl):
+class Maxipix(Device):
 
     core.DEB_CLASS(core.DebModule.DebModApplication, 'Maxipix')
-    
 
-#------------------------------------------------------------------
-#    Device constructor
-#------------------------------------------------------------------
-    def __init__(self,*args) :
-        PyTango.LatestDeviceImpl.__init__(self,*args)
+    # ------------------------------------------------------------------
+    #    Static properties
+    # ------------------------------------------------------------------
+    _MaxipixCamera = None
+    """Reference to Lima maxipix camera binding"""
+    _MaxipixInterface = None
+    """Reference to Lima maxipix interface binding"""
 
-        self.__SignalLevel = {'LOW_FALL': MaxipixModule.PriamAcq.SignalLevel.LOW_FALL,\
-                              'HIGH_RISE': MaxipixModule.PriamAcq.SignalLevel.HIGH_RISE}
-        self.__ReadyLevel = self.__SignalLevel
-        self.__GateLevel = self.__SignalLevel
-        self.__TriggerLevel = self.__SignalLevel
-        self.__ShutterLevel = self.__SignalLevel
-        
-        self.__ReadyMode =   {'EXPOSURE': MaxipixModule.PriamAcq.ReadyMode.EXPOSURE,\
-                              'EXPOSURE_READOUT': MaxipixModule.PriamAcq.ReadyMode.EXPOSURE_READOUT}
-        self.__GateMode =    {'INACTIVE': MaxipixModule.PriamAcq.GateMode.INACTIVE,\
-                              'ACTIVE': MaxipixModule.PriamAcq.GateMode.ACTIVE}
-        self.__FillMode =    {'RAW': MaxipixModule.MaxipixReconstruction.Type.RAW,
-                              'ZERO': MaxipixModule.MaxipixReconstruction.Type.ZERO,
-                              'DISPATCH': MaxipixModule.MaxipixReconstruction.Type.DISPATCH,
-                              'MEAN': MaxipixModule.MaxipixReconstruction.Type.MEAN
-                              }
-        
-        self.__Attribute2FunctionBase = {'signal_level': 'SignalLevel',
-                                         'ready_level': 'ReadyLevel',
-                                         'gate_level': 'GateLevel',
-                                         'shutter_level': 'ShutterLevel',
-                                         'trigger_level': 'TriggerLevel',
-                                         'ready_mode': 'ReadyMode',
-                                         'gate_mode': 'GateMode',
-                                         'fill_mode': 'FillMode',
-                                         'energy_threshold': 'Energy'
-                                         }
+    _SignalLevel = {
+        'LOW_FALL': MaxipixModule.PriamAcq.SignalLevel.LOW_FALL,
+        'HIGH_RISE': MaxipixModule.PriamAcq.SignalLevel.HIGH_RISE,
+    }
+    _ReadyMode = {
+        'EXPOSURE': MaxipixModule.PriamAcq.ReadyMode.EXPOSURE,
+        'EXPOSURE_READOUT': MaxipixModule.PriamAcq.ReadyMode.EXPOSURE_READOUT,
+    }
+    _GateMode = {
+        'INACTIVE': MaxipixModule.PriamAcq.GateMode.INACTIVE,
+        'ACTIVE': MaxipixModule.PriamAcq.GateMode.ACTIVE,
+    }
+    _FillMode = {
+        'RAW': MaxipixModule.MaxipixReconstruction.Type.RAW,
+        'ZERO': MaxipixModule.MaxipixReconstruction.Type.ZERO,
+        'DISPATCH': MaxipixModule.MaxipixReconstruction.Type.DISPATCH,
+        'MEAN': MaxipixModule.MaxipixReconstruction.Type.MEAN,
+    }
 
-        self.init_device()
+    # ------------------------------------------------------------------
+    #    Device properties (initial hardware configuration only - the
+    #    live attributes of the same name below read/write the camera
+    #    directly, they don't share storage with these)
+    # ------------------------------------------------------------------
+    espia_dev_nb = device_property(dtype=int, default_value=0)
+    config_path = device_property(dtype=str, default_value="")
+    config_name = device_property(dtype=str, default_value="")
+    reconstruction_active = device_property(dtype=bool, default_value=True)
+    fill_mode = device_property(dtype=str, default_value="")
+    ready_level = device_property(dtype=str, default_value="")
+    gate_level = device_property(dtype=str, default_value="")
+    shutter_level = device_property(dtype=str, default_value="")
+    trigger_level = device_property(dtype=str, default_value="")
+    ready_mode = device_property(dtype=str, default_value="")
+    gate_mode = device_property(dtype=str, default_value="")
 
-#------------------------------------------------------------------
-#    Device destructor
-#------------------------------------------------------------------
-    def delete_device(self):
-        pass
-
-#------------------------------------------------------------------
-#    Device initialization
-#------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    #    Device initialization
+    # ------------------------------------------------------------------
     @core.DEB_MEMBER_FUNCT
     def init_device(self):
-        self.set_state(PyTango.DevState.ON)
-        # Load the properties
-        self.get_device_properties(self.get_device_class())
+        Device.init_device(self)
+
+        self.set_state(DevState.ON)
+
+        # Leagcy code used by AttrHelper.get_attr_string_value_list
+        self.__SignalLevel = self._SignalLevel
+        self.__ReadyLevel = self._SignalLevel
+        self.__GateLevel = self._SignalLevel
+        self.__TriggerLevel = self._SignalLevel
+        self.__ShutterLevel = self._SignalLevel
+        self.__ReadyMode = self._ReadyMode
+        self.__GateMode = self._GateMode
+        self.__FillMode = self._FillMode
 
         # Apply property to the attributes
-
-        for attr_name in ['fill_mode','ready_mode','ready_level','gate_mode','gate_level','shutter_level','trigger_level'] :       
-            self.applyNewPropery(attr_name ,None)
-                                         
-	
-#==================================================================
-# 
-# Some Utils
-#
-#==================================================================
+        priam = self._MaxipixInterface.priamAcq()
+        for prop_name, enum, setter in (
+            ("fill_mode", self._FillMode, self._MaxipixInterface.setFillMode),
+            ("ready_mode", self._ReadyMode, priam.setReadyMode),
+            ("ready_level", self._SignalLevel, priam.setReadyLevel),
+            ("gate_mode", self._GateMode, priam.setGateMode),
+            ("gate_level", self._SignalLevel, priam.setGateLevel),
+            ("shutter_level", self._SignalLevel, priam.setShutterLevel),
+            ("trigger_level", self._SignalLevel, priam.setTriggerLevel),
+        ):
+            self.applyNewPropery(prop_name, enum, setter)
 
     @core.DEB_MEMBER_FUNCT
-    def applyNewPropery(self, prop_name, extra=None):
-        if extra is not None: name = self.__OtherAttribute2FunctionBase[prop_name]
-        else: name = self.__Attribute2FunctionBase[prop_name]
+    def applyNewPropery(self, prop_name, enum, setter):
         key = getattr(self, prop_name)
-        if not key: return # property is not set
-        
-        dict = getattr(self, '_'+self.__class__.__name__+'__'+name)
-        _PriamAcq = _MaxipixInterface.priamAcq()
-        if prop_name.count('fill_mode'):
-            func = getattr(_MaxipixInterface, 'set'+name)
-        else:
-            func = getattr(_PriamAcq, 'set'+name)
-        deb.Always('Setting property '+prop_name) 
-
-        val = AttrHelper.getDictValue(dict, key.upper())
-        if  val is None:
+        if not key:
+            return  # property is not set
+        deb.Always('Setting property ' + prop_name)
+        val = AttrHelper.getDictValue(enum, key.upper())
+        if val is None:
             deb.Error('Wrong value for property %s :%s' % (prop_name, val))
         else:
-            if extra is not None: func(extra,val)
-            else: func(val)
+            setter(val)
 
     def __getConfigNameList(self):
-        spath= os.path.normpath(self.config_path)
+        spath = os.path.normpath(self.config_path)
         if not os.path.isdir(spath):
-            PyTango.Except.throw_exception('WrongData',\
-                                           'Invalid path: %s'%(self.config_path),\
-                                           'Maxipix Class') 
+            PyTango.Except.throw_exception('WrongData',
+                                           'Invalid path: %s'%(self.config_path),
+                                           'Maxipix Class')
 
         else:
             dirList = os.listdir(spath)
@@ -159,74 +164,12 @@ class Maxipix(PyTango.LatestDeviceImpl):
             timeList = sorted(fileDict.keys())
             for mTime in timeList:
                 fileList.append(fileDict[mTime])
-                #fileList.append(time.ctime(mTime))
         return fileList
-                     
-        
-#==================================================================
-#
-#    Maxipix read/write attribute methods
-#
-#==================================================================
 
-    def __getattr__(self,name) :
-        _PriamAcq = _MaxipixInterface.priamAcq()
-        if name.count('fill_mode') or name.count('energy_threshold'):
-            return AttrHelper.get_attr_4u(self, name, _MaxipixInterface)
-        else:
-            return AttrHelper.get_attr_4u(self, name, _PriamAcq)
-            
-        
-    ## @brief read the config name
-    #
-    def read_config_name(self,attr) :
-        cfg_name = ""
-        if self.config_name:
-            cfg_name = self.config_name
-        attr.set_value(cfg_name)
-
-    ## @brief Write the config name and load it
-    #
-    def write_config_name(self,attr) :
-        data = attr.get_write_value()
-        _MaxipixInterface.loadConfig(data)
-        self.config_name = data
-
-    ## @brief read the config path
-    #
-    def read_config_path(self,attr) :
-        cfg_path = ""
-        if self.config_path:
-            cfg_path = self.config_path
-        attr.set_value(cfg_path)
-
-    ## @brief Write the config path
-    #
-    def write_config_path(self,attr) :
-        data = attr.get_write_value()
-        _MaxipixInterface.setPath(data)
-        self.config_path = data
-
-    ## @brief read the board id
-    #
-    def read_espia_dev_nb(self,attr) :
-        espia_dev_nb = 0
-        if self.espia_dev_nb:
-            espia_dev_nb = self.espia_dev_nb
-        attr.set_value(espia_dev_nb)
-
-
-#==================================================================
-#
-#    Maxipix command methods
-#
-#==================================================================
-#------------------------------------------------------------------
-#    getAttrStringValueList command:
-#
-#    Description: return a list of authorized values if any
-#    argout: DevVarStringArray   
-#------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    #    Commands
+    # ------------------------------------------------------------------
+    @command(dtype_in=str, dtype_out=(str,))
     @core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
         if attr_name.count('config_name'):
@@ -234,191 +177,189 @@ class Maxipix(PyTango.LatestDeviceImpl):
         else:
             return AttrHelper.get_attr_string_value_list(self, attr_name)
 
-class MaxipixClass(PyTango.DeviceClass):
+    # ------------------------------------------------------------------
+    #    Attributes with custom read/write logic
+    # ------------------------------------------------------------------
+    def _config_name_fget(self):
+        return self.config_name or ""
 
-    class_property_list = {}
+    def _config_name_fset(self, data):
+        self._MaxipixInterface.loadConfig(data)
+        self.config_name = data
 
-    device_property_list = {
-        'espia_dev_nb':
-        [PyTango.DevShort,
-         "Espia board device number",[]],
-        'config_path':
-        [PyTango.DevString,
-         "Path where configuration files are",[]],
-        'config_name':
-        [PyTango.DevString,
-         "The default configuration loaded",[]],
-        'reconstruction_active':
-        [PyTango.DevBoolean,
-         "Set active or inactive the image reconstruction",[]],
-        'fill_mode':
-        [PyTango.DevString,
-         "The default configuration loaded",[]],	 
-       'ready_level':
-        [PyTango.DevString,
-         "The ready output signal level",[]],	  
-       'gate_level':
-        [PyTango.DevString,
-         "The gate output signal level",[]],	  
-       'shutter_level':
-        [PyTango.DevString,
-         "The shutter output signal level",[]],	  
-       'trigger_level':
-        [PyTango.DevString,
-         "The trigger output signal level",[]],	  
-       'ready_mode':
-        [PyTango.DevString,
-         "The ready output signal level",[]],	  
-       'gate_mode':
-        [PyTango.DevString,
-         "The gate output signal level",[]],	  
-        }
+    config_name_attr = attribute(
+        name="config_name",
+        dtype=str,
+        access=AttrWriteType.READ_WRITE,
+        label="Configuration name",
+        unit="N/A",
+        doc="root name of the configuration files",
+        fget=_config_name_fget,
+        fset=_config_name_fset,
+    )
 
-    cmd_list = {
-        'getAttrStringValueList':
-        [[PyTango.DevString, "Attribute name"],
-         [PyTango.DevVarStringArray, "Authorized String value list"]],
-        }
+    def _config_path_fget(self):
+        return self.config_path or ""
 
-    attr_list = {
-        'energy_threshold':
-        [[PyTango.DevDouble,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"Energy threshold",
-             'unit':"KeV",
-             'format':"%5.2f",
-             'description':"Energy threshold (KeV)",
-         }],
-        'config_name':
-        [[PyTango.DevString,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"Configuration name",
-             'unit':"N/A",
-             'format':"",
-             'description':"root name of the configuration files",
-         }],
-        'config_path':
-        [[PyTango.DevString,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"Configuration directory path",
-             'unit':"N/A",
-             'format':"",
-             'description':"Path of the configuration directory",
-         }],
-        'fill_mode':	  
-        [[PyTango.DevString,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"Fill mode",
-             'unit':"enum.",
-             'format':"",
-             'description':"Between chip filling mode",
-         }],	  
-        'espia_dev_nb':	  
-        [[PyTango.DevShort,
-          PyTango.SCALAR,
-          PyTango.READ],
-         {
-             'label':"Espia board number",
-             'unit':"number",
-             'format':"",
-             'description':"The Espia board device number",
-         }],	  
-        'ready_mode':	  
-        [[PyTango.DevString,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"Ready output mode",
-             'unit':"enum.",
-             'format':"",
-             'description':"Mode of the Ready output",
-         }],	  
-        'ready_level':	  
-        [[PyTango.DevString,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"Ready output level",
-             'unit':"enum.",
-             'format':"",
-             'description':"The level logic of the Ready output",
-         }],	  
-        'shutter_level':	  
-        [[PyTango.DevString,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"Shutter output level",
-             'unit':"enum.",
-             'format':"",
-             'description':"The level logic of the  Shutter output",
-         }],	  
-        'gate_mode':	  
-        [[PyTango.DevString,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"The Gate input mode",
-             'unit':"enum.",
-             'format':"",
-             'description':"",
-         }],	  
-        'gate_level':	  
-        [[PyTango.DevString,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"",
-             'unit':"",
-             'format':"",
-             'description':"",
-         }],	  
-        'trigger_level':	  
-        [[PyTango.DevString,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"",
-             'unit':"",
-             'format':"",
-             'description':"",
-         }],	  
-        }
+    def _config_path_fset(self, data):
+        self._MaxipixInterface.setPath(data)
+        self.config_path = data
 
+    config_path_attr = attribute(
+        name="config_path",
+        dtype=str,
+        access=AttrWriteType.READ_WRITE,
+        label="Configuration directory path",
+        unit="N/A",
+        doc="Path of the configuration directory",
+        fget=_config_path_fget,
+        fset=_config_path_fset,
+    )
 
-    def __init__(self,name) :
-        PyTango.DeviceClass.__init__(self,name)
-        self.set_type(name)
+    def _espia_dev_nb_fget(self):
+        return self.espia_dev_nb or 0
+
+    espia_dev_nb_attr = attribute(
+        name="espia_dev_nb",
+        dtype=int,
+        access=AttrWriteType.READ,
+        label="Espia board number",
+        unit="number",
+        doc="The Espia board device number",
+        fget=_espia_dev_nb_fget,
+    )
+
+    # ------------------------------------------------------------------
+    #    Attributes fully dispatched by naming convention (no explicit
+    #    logic in the legacy code either - see AttrHelper.make_fget_fset)
+    # ------------------------------------------------------------------
+    _energy_threshold_fget, _energy_threshold_fset = AttrHelper.make_fget_fset(
+        "energy", lambda self: self._MaxipixInterface
+    )
+    energy_threshold = attribute(
+        dtype=float,
+        access=AttrWriteType.READ_WRITE,
+        label="Energy threshold",
+        unit="KeV",
+        format="%5.2f",
+        doc="Energy threshold (KeV)",
+        fget=_energy_threshold_fget,
+        fset=_energy_threshold_fset,
+    )
+
+    _fill_mode_fget, _fill_mode_fset = AttrHelper.make_fget_fset(
+        "fill_mode", lambda self: self._MaxipixInterface, enum=_FillMode
+    )
+    fill_mode_attr = attribute(
+        name="fill_mode",
+        dtype=str,
+        access=AttrWriteType.READ_WRITE,
+        label="Fill mode",
+        unit="enum.",
+        doc="Between chip filling mode",
+        fget=_fill_mode_fget,
+        fset=_fill_mode_fset,
+    )
+
+    _ready_mode_fget, _ready_mode_fset = AttrHelper.make_fget_fset(
+        "ready_mode", lambda self: self._MaxipixInterface.priamAcq(), enum=_ReadyMode
+    )
+    ready_mode_attr = attribute(
+        name="ready_mode",
+        dtype=str,
+        access=AttrWriteType.READ_WRITE,
+        label="Ready output mode",
+        unit="enum.",
+        doc="Mode of the Ready output",
+        fget=_ready_mode_fget,
+        fset=_ready_mode_fset,
+    )
+
+    _ready_level_fget, _ready_level_fset = AttrHelper.make_fget_fset(
+        "ready_level", lambda self: self._MaxipixInterface.priamAcq(), enum=_SignalLevel
+    )
+    ready_level_attr = attribute(
+        name="ready_level",
+        dtype=str,
+        access=AttrWriteType.READ_WRITE,
+        label="Ready output level",
+        unit="enum.",
+        doc="The level logic of the Ready output",
+        fget=_ready_level_fget,
+        fset=_ready_level_fset,
+    )
+
+    _shutter_level_fget, _shutter_level_fset = AttrHelper.make_fget_fset(
+        "shutter_level", lambda self: self._MaxipixInterface.priamAcq(), enum=_SignalLevel
+    )
+    shutter_level_attr = attribute(
+        name="shutter_level",
+        dtype=str,
+        access=AttrWriteType.READ_WRITE,
+        label="Shutter output level",
+        unit="enum.",
+        doc="The level logic of the  Shutter output",
+        fget=_shutter_level_fget,
+        fset=_shutter_level_fset,
+    )
+
+    _gate_mode_fget, _gate_mode_fset = AttrHelper.make_fget_fset(
+        "gate_mode", lambda self: self._MaxipixInterface.priamAcq(), enum=_GateMode
+    )
+    gate_mode_attr = attribute(
+        name="gate_mode",
+        dtype=str,
+        access=AttrWriteType.READ_WRITE,
+        label="The Gate input mode",
+        unit="enum.",
+        fget=_gate_mode_fget,
+        fset=_gate_mode_fset,
+    )
+
+    _gate_level_fget, _gate_level_fset = AttrHelper.make_fget_fset(
+        "gate_level", lambda self: self._MaxipixInterface.priamAcq(), enum=_SignalLevel
+    )
+    gate_level_attr = attribute(
+        name="gate_level",
+        dtype=str,
+        access=AttrWriteType.READ_WRITE,
+        fget=_gate_level_fget,
+        fset=_gate_level_fset,
+    )
+
+    _trigger_level_fget, _trigger_level_fset = AttrHelper.make_fget_fset(
+        "trigger_level", lambda self: self._MaxipixInterface.priamAcq(), enum=_SignalLevel
+    )
+    trigger_level_attr = attribute(
+        name="trigger_level",
+        dtype=str,
+        access=AttrWriteType.READ_WRITE,
+        fget=_trigger_level_fget,
+        fset=_trigger_level_fset,
+    )
 
 
 #----------------------------------------------------------------------------
 #                              Plugins
 #----------------------------------------------------------------------------
 
-_MaxipixCamera = None
-_MaxipixInterface = None
-
-def get_control(espia_dev_nb = '0',config_path='', config_name='', reconstruction_active='true', **keys) :
+def get_control(espia_dev_nb='0', config_path='', config_name='', reconstruction_active='true',
+                 _Maxipix=Maxipix, _Camera=MaxipixModule.Camera, _Interface=MaxipixModule.Interface,
+                 **keys):
     #properties are passed here as string
-    global _MaxipixCamera
-    global _MaxipixInterface
+    camera = _Maxipix._MaxipixCamera
+    interface = _Maxipix._MaxipixInterface
 
     if reconstruction_active.lower() == 'true': active = True
     else: active  = False
-    if _MaxipixCamera is None:
-        _MaxipixCamera = MaxipixModule.Camera(int(espia_dev_nb), config_path, config_name, active)
-        _MaxipixInterface = MaxipixModule.Interface(_MaxipixCamera)
-        
-    return core.CtControl(_MaxipixInterface)
+    if camera is None:
+        camera = _Camera(int(espia_dev_nb), config_path, config_name, active)
+        interface = _Interface(camera)
+        _Maxipix._MaxipixCamera = camera
+        _Maxipix._MaxipixInterface = interface
 
-    
+    return core.CtControl(interface)
+
+
 def get_tango_specific_class_n_device():
-    return MaxipixClass,Maxipix
+    return Maxipix.TangoClassClass, Maxipix
