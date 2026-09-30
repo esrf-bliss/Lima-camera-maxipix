@@ -193,7 +193,7 @@ class Maxipix(Device):
         access=AttrWriteType.READ_WRITE,
         label="Configuration name",
         unit="N/A",
-        doc="root name of the configuration files",
+        doc="The configuration name; if changed the detector is reconfigured and reset",
         fget=_config_name_fget,
         fset=_config_name_fset,
     )
@@ -256,7 +256,7 @@ class Maxipix(Device):
         access=AttrWriteType.READ_WRITE,
         label="Fill mode",
         unit="enum.",
-        doc="Between chip filling mode",
+        doc="The chip-gap filling mode: Raw (copied), Zero, Dispatch (interpolated) or Mean",
         fget=_fill_mode_fget,
         fset=_fill_mode_fset,
     )
@@ -270,7 +270,7 @@ class Maxipix(Device):
         access=AttrWriteType.READ_WRITE,
         label="Ready output mode",
         unit="enum.",
-        doc="Mode of the Ready output",
+        doc="Mode of the Ready output: Exposure or Exposure_Readout",
         fget=_ready_mode_fget,
         fset=_ready_mode_fset,
     )
@@ -284,7 +284,7 @@ class Maxipix(Device):
         access=AttrWriteType.READ_WRITE,
         label="Ready output level",
         unit="enum.",
-        doc="The level logic of the Ready output",
+        doc="The level logic of the Ready output: High_Rise or Low_Fall",
         fget=_ready_level_fget,
         fset=_ready_level_fset,
     )
@@ -298,7 +298,7 @@ class Maxipix(Device):
         access=AttrWriteType.READ_WRITE,
         label="Shutter output level",
         unit="enum.",
-        doc="The level logic of the  Shutter output",
+        doc="The level logic of the Shutter output: High_Rise or Low_Fall",
         fget=_shutter_level_fget,
         fset=_shutter_level_fset,
     )
@@ -312,6 +312,7 @@ class Maxipix(Device):
         access=AttrWriteType.READ_WRITE,
         label="The Gate input mode",
         unit="enum.",
+        doc="The gate mode: Inactive or Active",
         fget=_gate_mode_fget,
         fset=_gate_mode_fset,
     )
@@ -323,6 +324,9 @@ class Maxipix(Device):
         name="gate_level",
         dtype=str,
         access=AttrWriteType.READ_WRITE,
+        label="Gate input level",
+        unit="enum.",
+        doc="The Input gate level: High_Rise or Low_Fall",
         fget=_gate_level_fget,
         fset=_gate_level_fset,
     )
@@ -334,6 +338,9 @@ class Maxipix(Device):
         name="trigger_level",
         dtype=str,
         access=AttrWriteType.READ_WRITE,
+        label="Trigger output level",
+        unit="enum.",
+        doc="The output Trigger level: High_Rise or Low_Fall",
         fget=_trigger_level_fget,
         fset=_trigger_level_fset,
     )
